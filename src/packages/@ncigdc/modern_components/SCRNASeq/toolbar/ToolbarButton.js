@@ -18,6 +18,7 @@ export default class ToolbarButton extends Component {
       faClass = '',
       label,
       name,
+      text = '',
       val = '',
     } = this.props;
     return (
@@ -43,6 +44,7 @@ export default class ToolbarButton extends Component {
               />
           )}
           {label === 'Fullscreen' && <FullScreenIcon />}
+          {text && <span style={{ marginLeft: '0.5rem' }}>{text}</span>}
           <Hidden>{label}</Hidden>
         </Button>
       </Tooltip>

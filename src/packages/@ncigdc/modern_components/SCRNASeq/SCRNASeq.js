@@ -12,7 +12,7 @@ import { Row, Column } from '@ncigdc/uikit/Flex';
 import SCRNASeqPlot from './SCRNASeqPlot';
 import { toolbarButtons } from './SCRNASeqPlot/utils';
 import './styles.scss';
-import { DownloadButton } from './toolbar';
+import { ToolbarButton } from './toolbar';
 
 // temporarily importing data
 import stubData from './stubData';
@@ -50,7 +50,7 @@ const SCRNASeq = () => (
           >
           Single Cell RNA Sequencing
         </h1>
-        <DownloadButton {...toolbarButtons.download} />
+        <ToolbarButton {...toolbarButtons.downloadSummary} />
       </Row>
       <div className="scrnaseq-row">
         {dataTypes.map(dType => (

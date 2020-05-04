@@ -39,6 +39,12 @@ export const toolbarButtons = {
     label: 'Download',
     name: 'download',
   },
+  downloadSummary: {
+    faClass: 'fa-download',
+    label: 'Download ZIP File',
+    name: 'downloadSummary',
+    text: 'Analysis Summary',
+  },
   fullscreen: {
     label: 'Fullscreen',
     name: 'fullscreen',
