@@ -36,6 +36,7 @@ import {
 
 const CONTROLLED_ACCESS_CONTEXT = {
   controlledAccessProps: PropTypes.object,
+  // setUseStudyParam: PropTypes.func,
 };
 
 export default getContext(CONTROLLED_ACCESS_CONTEXT);
@@ -48,6 +49,7 @@ export const withControlledAccessContext = compose(
     user: state.auth.user,
     userControlledAccess: state.auth.userControlledAccess,
   })),
+  withState('useStudyParam', 'setUseStudyParam', false),
   withState('studiesSummary', 'setStudiesSummary', {}),
   withHandlers({
     clearUserAccess: ({
@@ -145,6 +147,7 @@ export const withControlledAccessContext = compose(
       query: {
         controlled = '',
       },
+      setUseStudyParam,
       studiesSummary,
       user,
       userControlledAccess,
@@ -185,9 +188,16 @@ export const withControlledAccessContext = compose(
         ),
       });
 
+      const controlledStudiesQueryParam = checkUserAccess(
+        userControlledAccess.studies,
+        controlledStudies,
+      )[0];
+
       return DISPLAY_DAVE_CA && {
         controlledAccessProps: {
           controlledStudies,
+          controlledStudiesQueryParam,
+          setUseStudyParam,
           showControlledAccessModal: () => {
             dispatch(setModal(
               <ControlledAccessModal
@@ -214,8 +224,10 @@ export const withControlledAccessContext = compose(
     CONTROLLED_ACCESS_CONTEXT,
     ({
       controlledAccessProps,
+      // setUseStudyParam,
     }) => ({
       controlledAccessProps,
+      // setUseStudyParam,
     }),
   ),
 );

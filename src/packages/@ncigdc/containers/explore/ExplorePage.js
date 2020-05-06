@@ -424,6 +424,7 @@ const ExplorePage = Relay.createContainer(
     withState('maxFacetsPanelHeight', 'setMaxFacetsPanelHeight', 0),
     lifecycle({
       componentDidMount() {
+        this.props.controlledAccessProps.setUseStudyParam(true);
         setVariables(this.props);
       },
       componentWillReceiveProps(nextProps) {
@@ -431,6 +432,9 @@ const ExplorePage = Relay.createContainer(
         if (!isEqual(filters, nextProps.filters)) {
           setVariables(nextProps);
         }
+      },
+      componentWillUnmount() {
+        this.props.controlledAccessProps.setUseStudyParam(false);
       },
     }),
   )(ExplorePageComponent),
