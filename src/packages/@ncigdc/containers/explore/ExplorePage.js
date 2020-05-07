@@ -378,6 +378,11 @@ export const ExplorePageQuery = {
     ssms_offset: null,
     ssms_size: null,
     ssms_sort: null,
+    study: null,
+  },
+  shouldComponentUpdate: (...props) => {
+    console.log('what!?', props);
+    return true;
   },
 };
 
@@ -413,6 +418,7 @@ const setVariables = ({ filters, relay }) => {
       },
       filters,
     ),
+    study: { nope: true },
   });
 };
 
