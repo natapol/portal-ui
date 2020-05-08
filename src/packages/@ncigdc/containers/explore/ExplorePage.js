@@ -101,11 +101,11 @@ const ExplorePageComponent = ({
   push,
   relay,
   setMaxFacetsPanelHeight,
-  viewer,
+  viewerWithCA,
 }) => {
-  const hasCaseHits = get(viewer, 'explore.cases.hits.total', 0);
-  const hasGeneHits = get(viewer, 'explore.genes.hits.total', 0);
-  const hasSsmsHits = get(viewer, 'explore.ssms.hits.total', 0);
+  const hasCaseHits = get(viewerWithCA, 'explore.cases.hits.total', 0);
+  const hasGeneHits = get(viewerWithCA, 'explore.genes.hits.total', 0);
+  const hasSsmsHits = get(viewerWithCA, 'explore.ssms.hits.total', 0);
 
   const isCaseLimitExceeded = DISPLAY_10K && hasCaseHits > CASE_LIMIT_API;
 
@@ -155,7 +155,7 @@ const ExplorePageComponent = ({
         {
           component: (
             <SSMAggregations
-              aggregations={viewer.explore.ssms.aggregations}
+              aggregations={viewerWithCA.explore.ssms.aggregations}
               defaultFilters={filters}
               maxFacetsPanelHeight={maxFacetsPanelHeight}
               setAutocomplete={(value, onReadyStateChange) => relay.setVariables(
@@ -165,8 +165,8 @@ const ExplorePageComponent = ({
                 },
                 onReadyStateChange,
               )}
-              ssms={viewer.explore.ssms}
-              suggestions={get(viewer, 'autocomplete_ssms.hits', [])}
+              ssms={viewerWithCA.explore.ssms}
+              suggestions={get(viewerWithCA, 'autocomplete_ssms.hits', [])}
               />
           ),
           id: 'mutations',
@@ -217,7 +217,7 @@ const ExplorePageComponent = ({
                   )
                   : hasGeneHits
                     ? (
-                      <GenesTab viewer={viewer} />
+                      <GenesTab viewer={viewerWithCA} />
                     )
                     : (
                       <NoResultsMessage>No Genes Found.</NoResultsMessage>
@@ -238,7 +238,7 @@ const ExplorePageComponent = ({
                     ? (
                       <MutationsTab
                         totalNumCases={hasCaseHits}
-                        viewer={viewer}
+                        viewer={viewerWithCA}
                         />
                     )
                     : (
@@ -315,7 +315,19 @@ const ExplorePageComponent = ({
 
 export const ExplorePageQuery = {
   fragments: {
+    // unused query, keeping for reference
     viewer: () => Relay.QL`
+      fragment on Root {
+        explore {
+          cnvs {
+            hits(first: $genes_size offset: $genes_offset, filters: $filters) {
+              total
+            }
+          }
+        }
+      }
+    `,
+    viewerWithCA: () => Relay.QL`
       fragment on Root {
         autocomplete_ssms: query (query: $idAutocompleteSsms types: ["ssm_centric"]) @include(if: $runAutocompleteSsms) {
           hits {
@@ -335,11 +347,6 @@ export const ExplorePageQuery = {
             }
           }
           genes {
-            hits(first: $genes_size offset: $genes_offset, filters: $filters) {
-              total
-            }
-          }
-          cnvs {
             hits(first: $genes_size offset: $genes_offset, filters: $filters) {
               total
             }
@@ -380,10 +387,6 @@ export const ExplorePageQuery = {
     ssms_sort: null,
     study: null,
   },
-  shouldComponentUpdate: (...props) => {
-    console.log('what!?', props);
-    return true;
-  },
 };
 
 const setVariables = ({ filters, relay }) => {
@@ -418,7 +421,12 @@ const setVariables = ({ filters, relay }) => {
       },
       filters,
     ),
-    study: { nope: true },
+    study: {
+      programs: {
+        name: 'TARGET',
+        projects: ['TARGET-ALL-P1', 'TARGET-ALL-P2'],
+      },
+    },
   });
 };
 
@@ -430,7 +438,6 @@ const ExplorePage = Relay.createContainer(
     withState('maxFacetsPanelHeight', 'setMaxFacetsPanelHeight', 0),
     lifecycle({
       componentDidMount() {
-        this.props.controlledAccessProps.setUseStudyParam(true);
         setVariables(this.props);
       },
       componentWillReceiveProps(nextProps) {
@@ -438,9 +445,6 @@ const ExplorePage = Relay.createContainer(
         if (!isEqual(filters, nextProps.filters)) {
           setVariables(nextProps);
         }
-      },
-      componentWillUnmount() {
-        this.props.controlledAccessProps.setUseStudyParam(false);
       },
     }),
   )(ExplorePageComponent),

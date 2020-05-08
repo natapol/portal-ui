@@ -49,7 +49,6 @@ export const withControlledAccessContext = compose(
     user: state.auth.user,
     userControlledAccess: state.auth.userControlledAccess,
   })),
-  withState('useStudyParam', 'setUseStudyParam', false),
   withState('studiesSummary', 'setStudiesSummary', {}),
   withHandlers({
     clearUserAccess: ({
@@ -82,6 +81,15 @@ export const withControlledAccessContext = compose(
         payload: reshapeUserAccess(controlled),
         type: 'gdc/USER_CONTROLLED_ACCESS_SUCCESS',
       });
+    },
+  }),
+  lifecycle({
+    componentDidMount() {
+      const {
+        fetchStudiesList,
+      } = this.props;
+
+      fetchStudiesList();
     },
   }),
   withPropsOnChange(
@@ -147,7 +155,6 @@ export const withControlledAccessContext = compose(
       query: {
         controlled = '',
       },
-      setUseStudyParam,
       studiesSummary,
       user,
       userControlledAccess,
@@ -188,16 +195,9 @@ export const withControlledAccessContext = compose(
         ),
       });
 
-      const controlledStudiesQueryParam = checkUserAccess(
-        userControlledAccess.studies,
-        controlledStudies,
-      )[0];
-
       return DISPLAY_DAVE_CA && {
         controlledAccessProps: {
           controlledStudies,
-          controlledStudiesQueryParam,
-          setUseStudyParam,
           showControlledAccessModal: () => {
             dispatch(setModal(
               <ControlledAccessModal
@@ -208,26 +208,33 @@ export const withControlledAccessContext = compose(
             ));
           },
         },
+        controlledAccessQueryParam: checkUserAccess(
+          userControlledAccess.studies,
+          controlledStudies,
+        )[0],
       };
     },
   ),
-  lifecycle({
-    componentDidMount() {
-      const {
-        fetchStudiesList,
-      } = this.props;
-
-      fetchStudiesList();
-    },
+  withHandlers({
+    controlledAccessParams: ({
+      controlledAccessQueryParam,
+    }) => (
+      query,
+    ) => (
+      DISPLAY_DAVE_CA &&
+      !IS_DEV &&
+      query.toLowerCase().includes('requiresstudy') &&
+      controlledAccessQueryParam
+        ? { study: controlledAccessQueryParam }
+        : {}
+    ),
   }),
   withContext(
     CONTROLLED_ACCESS_CONTEXT,
     ({
       controlledAccessProps,
-      // setUseStudyParam,
     }) => ({
       controlledAccessProps,
-      // setUseStudyParam,
     }),
   ),
 );

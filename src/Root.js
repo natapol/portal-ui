@@ -95,10 +95,7 @@ const RelaySetup = compose(
   withControlledAccessContext,
   withHandlers({
     customMiddleware: ({
-      controlledAccessProps: {
-        controlledStudiesQueryParam,
-      } = {},
-      useStudyParam,
+      controlledAccessParams,
     }) => next => req => {
       const [url, search = ''] = req.url.split('?');
       const hash =
@@ -110,30 +107,19 @@ const RelaySetup = compose(
       req.url = `${url}?hash=${hash}`;
 
       const parsedBody = JSON.parse(req.body);
+      console.log('request coming in', req, parsedBody);
       req.body = JSON.stringify({
         ...parsedBody,
-        ...(!IS_DEV &&
-          DISPLAY_DAVE_CA &&
-          useStudyParam &&
-          controlledStudiesQueryParam)
-          ? { study: controlledStudiesQueryParam }
-          : {},
+        ...(!IS_AUTH_PORTAL ? controlledAccessParams(parsedBody.query) : {}),
       });
 
-      console.info(
-        'TEMP making request',
-        useStudyParam,
-        controlledStudiesQueryParam,
+      // notification for developer mode, due to lack of token.
+      IS_DEV && console.info(
+        `Request ${
+          parsedBody.query.toLowerCase().includes('requiresstudy') ? 'should' : 'shouldn\'t'
+        } include Study`,
         req,
       );
-
-      // reminder for dev mode, due to absence of token.
-      IS_DEV && controlledStudiesQueryParam &&
-        console.info(
-          'making request, but will not send Study Param',
-          controlledStudiesQueryParam,
-          req,
-        );
 
       if (!IS_AUTH_PORTAL) {
         return next(req);
@@ -198,7 +184,7 @@ const RelaySetup = compose(
       Relay.injectNetworkLayer(
         new RelayNetworkLayer([
           urlMiddleware({
-            url: req => urlJoin(API, 'graphql'),
+            url: () => urlJoin(API, 'graphql'),
           }),
           retryMiddleware({
             fetchTimeout: 15000,
@@ -211,95 +197,7 @@ const RelaySetup = compose(
             retryDelays: attempt => ((attempt + 4) ** 2) * 100,
             statusCodes: retryStatusCodes,
           }),
-          // Add hash id to request
           customMiddleware,
-          /* next => req => {
-            const [url, search = ''] = req.url.split('?');
-            const hash =
-              parse(search).hash ||
-              md5(
-                [req.relayReqObj._printedQuery.text, JSON.stringify(req.relayReqObj._printedQuery.variables)].join(':'),
-              );
-
-            req.url = `${url}?hash=${hash}`;
-
-            const parsedBody = JSON.parse(req.body);
-            req.body = JSON.stringify({
-              ...parsedBody,
-              ...(!IS_DEV &&
-                DISPLAY_DAVE_CA &&
-                controlledStudiesQueryParam)
-                ? { study: controlledStudiesQueryParam }
-                : {},
-            });
-
-            console.info(
-              'TEMP making request',
-              controlledStudiesQueryParam,
-              req,
-            );
-
-            // reminder for dev mode, due to absence of token.
-            IS_DEV && controlledStudiesQueryParam &&
-              console.info(
-                'making request, but will not send Study Param',
-                controlledStudiesQueryParam,
-                req,
-              );
-
-            if (!IS_AUTH_PORTAL) {
-              return next(req);
-            }
-
-            req.credentials = 'include';
-
-            return next(req)
-              .then(res => {
-                if (!res.ok && !retryStatusCodes.includes(res.status)) {
-                  consoleDebug('Throwing error in Root');
-                  throw res;
-                }
-
-                const { json } = res;
-                const { user } = window.store.getState().auth;
-
-                if (user) {
-                  if (!json.fence_projects[0]) {
-                    throw new AccessError('no_fence_projects');
-                  }
-
-                  if (!json.nih_projects) {
-                    throw new AccessError('no_nih_projects');
-                  }
-
-                  if (!json.intersection[0]) {
-                    throw new AccessError('no_intersection');
-                  }
-                }
-
-                return res;
-              })
-              .catch(err => {
-                const { user } = window.store.getState().auth;
-                if (err.name === 'AccessError') {
-                  consoleDebug(`Access error message: ${err.message}`);
-                  return redirectToLogin(err.message);
-                }
-                consoleDebug(`Something went wrong in Root network layer: ${err}`);
-                  // not able to pass the response status from throw so need to exclude by error message
-                const errorMessage = err.message
-                    ? JSON.parse(err.message).message
-                    : null;
-                if (
-                  IS_AUTH_PORTAL &&
-                    user &&
-                    errorMessage ===
-                      'Your token is invalid or expired. Please get a new token from GDC Data Portal.'
-                ) {
-                  return redirectToLogin('timeout');
-                }
-              });
-          }, */
         ]),
       );
     },
