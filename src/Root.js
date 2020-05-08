@@ -95,10 +95,7 @@ const RelaySetup = compose(
   withControlledAccessContext,
   withHandlers({
     customMiddleware: ({
-      controlledAccessProps: {
-        controlledStudiesQueryParam,
-      } = {},
-      useStudyParam,
+      addControlledAccessParams,
     }) => next => req => {
       const [url, search = ''] = req.url.split('?');
       const hash =
@@ -112,12 +109,7 @@ const RelaySetup = compose(
       const parsedBody = JSON.parse(req.body);
       req.body = JSON.stringify({
         ...parsedBody,
-        ...(!IS_DEV &&
-          DISPLAY_DAVE_CA &&
-          useStudyParam &&
-          controlledStudiesQueryParam)
-          ? { study: controlledStudiesQueryParam }
-          : {},
+        ...(!IS_AUTH_PORTAL ? addControlledAccessParams(parsedBody.query, req) : {}),
       });
 
       if (!IS_AUTH_PORTAL) {

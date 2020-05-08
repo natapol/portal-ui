@@ -207,13 +207,42 @@ export const withControlledAccessContext = compose(
             ));
           },
         },
-        controlledAccessQueryParam: checkUserAccess(
+        controlledAccessQueryParams: checkUserAccess(
           userControlledAccess.studies,
           controlledStudies,
-        )[0],
+        ),
       };
     },
   ),
+  withHandlers({
+    addControlledAccessParams: ({
+      controlledAccessQueryParams,
+    }) => (
+      query,
+      wholeReq,
+    ) => {
+      // reminder/notification for developer mode, due to lack of token.
+      IS_DEV &&
+        controlledAccessQueryParams.length &&
+        console.info(
+          `In prod, this request ${
+            query.toLowerCase().includes('requiresstudy') ? 'will' : 'won\'t'
+          } include Study. Results shown are for open data only.`,
+          wholeReq,
+        );
+
+      return (
+        DISPLAY_DAVE_CA &&
+        !IS_DEV &&
+        query.toLowerCase().includes('requiresstudy') &&
+        controlledAccessQueryParams.length
+          // the first one instead of array, because "single study" ¯\_(ツ)_/¯
+          ? { study: controlledAccessQueryParams[0] }
+          // TODO: Revise when multiple studies are allowed
+          // ? { study: controlledAccessQueryParams }
+          : {}
+      );
+    },
   }),
   withContext(
     CONTROLLED_ACCESS_CONTEXT,
